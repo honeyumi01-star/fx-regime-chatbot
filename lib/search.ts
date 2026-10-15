@@ -5,9 +5,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { loadDocuments, type StoredChunk } from "./documents";
 
-// 질문마다 나라별로 가져올 조각 수. 기본 2개, 문서가 2개 이상인 나라는 3개 (최대 8개, DESIGN §3 ④)
+// 질문마다 나라별로 가져올 조각 수. 기본 2개, 문서가 2개 이상인 나라는 "문서 수 + 1"개 (DESIGN §3 ④)
 const DEFAULT_PER_COUNTRY = 2;
-const MANY_DOCS_PER_COUNTRY = 3;
 
 type GlossaryGroup = { name: string; terms: string[] };
 
@@ -98,7 +97,7 @@ export async function findChunks(question: string): Promise<StoredChunk[]> {
   const picked: StoredChunk[] = [];
   for (const country of ["KR", "JP", "CN"] as const) {
     const docCount = new Set(chunks.filter((c) => c.country === country).map((c) => c.docId)).size;
-    const slots = docCount > 1 ? MANY_DOCS_PER_COUNTRY : DEFAULT_PER_COUNTRY;
+    const slots = docCount > 1 ? docCount + 1 : DEFAULT_PER_COUNTRY;
     const ranked = scored
       .filter((item) => item.chunk.country === country && item.score > 0)
       .sort((a, b) => b.score - a.score);
