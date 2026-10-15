@@ -7,7 +7,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 // 코드에 두는 기본 모델. 환경변수 OPENAI_MODEL이 있으면 그 값을 쓴다.
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const DEFAULT_MODEL = "gpt-5.6-luna";
 
 // 서버 전체 제한 시간(밀리초). DESIGN §5: 10초
 export const TIMEOUT_MS = 10_000;
