@@ -5,8 +5,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { loadDocuments, type StoredChunk } from "./documents";
 
-// 질문마다 나라별로 가져올 조각 수 (3개국 × 2 = 최대 6개, DESIGN §3 ④)
-const PER_COUNTRY = 2;
+// 질문마다 나라별로 가져올 조각 수. 기본 2개, 문서가 2개 이상인 나라는 3개 (최대 8개, DESIGN §3 ④)
+const DEFAULT_PER_COUNTRY = 2;
+const MANY_DOCS_PER_COUNTRY = 3;
 
 type GlossaryGroup = { name: string; terms: string[] };
 
@@ -91,14 +92,30 @@ export async function findChunks(question: string): Promise<StoredChunk[]> {
     return { chunk, score };
   });
 
-  // 나라별로 점수가 높은 순서대로 가져온다. 점수가 0이면 관련 없는 조각이라 뺀다.
+  // 나라별로 점수가 높은 조각을 가져온다. 점수가 0이면 관련 없는 조각이라 뺀다.
+  // 한 나라에 문서가 여러 개면(예: 한국은행 자료와 법 조문) 문서마다 가장 좋은 조각을 먼저 하나씩 담아,
+  // 한 문서의 조각이 자리를 모두 차지하지 않게 한다.
   const picked: StoredChunk[] = [];
   for (const country of ["KR", "JP", "CN"] as const) {
-    scored
+    const docCount = new Set(chunks.filter((c) => c.country === country).map((c) => c.docId)).size;
+    const slots = docCount > 1 ? MANY_DOCS_PER_COUNTRY : DEFAULT_PER_COUNTRY;
+    const ranked = scored
       .filter((item) => item.chunk.country === country && item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, PER_COUNTRY)
-      .forEach((item) => picked.push(item.chunk));
+      .sort((a, b) => b.score - a.score);
+    const chosen: typeof ranked = [];
+    const seenDocs = new Set<string>();
+    for (const item of ranked) {
+      if (chosen.length >= slots) break;
+      if (!seenDocs.has(item.chunk.docId)) {
+        seenDocs.add(item.chunk.docId);
+        chosen.push(item);
+      }
+    }
+    for (const item of ranked) {
+      if (chosen.length >= slots) break;
+      if (!chosen.includes(item)) chosen.push(item);
+    }
+    chosen.forEach((item) => picked.push(item.chunk));
   }
   return picked;
 }
