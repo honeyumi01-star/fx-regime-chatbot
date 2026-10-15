@@ -1,50 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { COUNTRY_COLUMNS, ROWS, type ApiAnswer, type Message, type Reply } from "./chat-types";
+import ReportView, { pickAnswered } from "./report-view";
 
 // Design Ref: §2 화면 구성 — ③ 대화 영역(비교표·출처)과 ④ 입력창, 상태표
 // Plan SC: 작업 4·5·8·9·10·11 — 비교표, 칸별 출처, 근거 없음·범위 밖 안내, 오류 시 다시 시도
-
-type Cell = { text: string; sourceNumbers: number[] } | null;
-type CountryAnswer = { overview: Cell; regulation: Cell; recent: Cell };
-type Source = {
-  number: number;
-  docTitle: string;
-  institution: string;
-  asOf: string;
-  heading: string;
-  sourceUrl: string;
-};
-type ApiAnswer = {
-  status: "ok" | "no_source" | "out_of_scope";
-  countries: { KR: CountryAnswer; JP: CountryAnswer; CN: CountryAnswer };
-  sources: Source[];
-  suggestions: string[];
-};
-
-// 답변 상태: 기다리는 중 / 도착 / 오류
-type Reply =
-  | { state: "loading" }
-  | { state: "done"; answer: ApiAnswer }
-  | { state: "error"; message: string };
-
-type Message = {
-  id: number;
-  question: string;
-  reply: Reply;
-};
-
-const COUNTRY_COLUMNS = [
-  ["KR", "한국"],
-  ["JP", "일본"],
-  ["CN", "중국"],
-] as const;
-
-const ROWS = [
-  ["overview", "제도 개요"],
-  ["regulation", "주요 규제"],
-  ["recent", "최근 변경"],
-] as const;
 
 // 서버에 연결하지 못했을 때(인터넷 끊김 등) 보여 주는 고정 문구
 const NETWORK_ERROR_MESSAGE = "답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요";
@@ -54,11 +16,31 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
   const [input, setInput] = useState("");
   // 빈 질문을 보냈을 때 입력창 아래에 보여 주는 안내 (DESIGN 7번 오류 처리)
   const [inputError, setInputError] = useState("");
+  // PDF 보고서에 적을 작성일 (저장 버튼을 누른 순간의 날짜)
+  const [reportDate, setReportDate] = useState("");
   const nextId = useRef(1);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 답변을 기다리는 질문이 하나라도 있으면 입력창을 잠가 중복 전송을 막는다
   const isWaiting = messages.some((m) => m.reply.state === "loading");
+
+  // 보고서에 들어갈 답변: 정상 답변만
+  const answered = pickAnswered(messages);
+
+  // PDF로 저장: 보고서 화면을 인쇄 창으로 띄운다. 인쇄 창에서 "PDF로 저장"을 고르면 파일이 된다.
+  function saveAsPdf() {
+    if (answered.length === 0) return;
+    const now = new Date();
+    flushSync(() =>
+      setReportDate(now.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })),
+    );
+    // 인쇄 창이 PDF 파일 이름으로 쓰는 탭 제목을 잠깐 바꿨다가 되돌린다
+    const originalTitle = document.title;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    document.title = `외환제도_비교_검토보고서_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    window.addEventListener("afterprint", () => (document.title = originalTitle), { once: true });
+    window.print();
+  }
 
   // 새 질문이나 답변이 생기면 대화 영역을 맨 아래로 내린다
   useEffect(() => {
@@ -122,7 +104,22 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
   }
 
   return (
-    <div className="flex min-h-[34rem] flex-col md:min-h-0 rounded-3xl bg-white p-4 shadow-[0_8px_30px_rgba(25,31,40,0.06)] md:h-full md:p-6">
+    <>
+    <div className="flex min-h-[34rem] flex-col print:hidden md:min-h-0 rounded-3xl bg-white p-4 shadow-[0_8px_30px_rgba(25,31,40,0.06)] md:h-full md:p-6">
+      {/* PDF 저장: 정상 답변이 하나라도 있어야 누를 수 있다 */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted">답변을 정부 보고서 형식으로 정리해 PDF로 저장할 수 있어요</p>
+        <button
+          type="button"
+          onClick={saveAsPdf}
+          disabled={answered.length === 0}
+          title={answered.length === 0 ? "답변이 나오면 저장할 수 있어요" : "인쇄 창에서 대상을 PDF로 저장으로 고르세요"}
+          className="shrink-0 rounded-full bg-brand-soft px-4 py-1.5 text-sm font-semibold text-brand-strong transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          PDF로 저장
+        </button>
+      </div>
+
       {/* ③ 대화 영역: 질문과 답변이 위에서 아래로 쌓인다. aria-live로 새 답변을 화면 읽기 프로그램에 알린다 */}
       <section
         aria-label="대화"
@@ -191,6 +188,9 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
         각 질문은 독립적으로 처리돼요. 이전 질문은 반영되지 않아요. (질문은 300자까지)
       </p>
     </div>
+    {/* 인쇄할 때만 보이는 보고서 */}
+    <ReportView items={answered} date={reportDate} />
+    </>
   );
 }
 

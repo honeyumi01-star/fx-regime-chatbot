@@ -27,3 +27,16 @@ body {
   font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
+
+/* PDF 저장(인쇄) 설정: A4 용지, 흰 바탕, 표 머리 회색도 그대로 인쇄 */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+  body {
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

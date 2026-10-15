@@ -1,15 +1,34 @@
 import { getSuggestions } from "@/lib/search";
+import fs from "node:fs";
+import path from "node:path";
 import ChatPanel from "./chat-panel";
+
+// 기관 로고 파일: public 폴더에 gov-logo.png / .svg / .jpg 중 하나를 넣으면 제목 위에 나온다 (없으면 이름만 표시)
+function findLogo(): string | null {
+  for (const name of ["gov-logo.svg", "gov-logo.png", "gov-logo.jpg"]) {
+    if (fs.existsSync(path.join(process.cwd(), "public", name))) return `/${name}`;
+  }
+  return null;
+}
 
 // Design Ref: §2 화면 구성 — 왼쪽: ① 제목 + ② 안내 문구 / 오른쪽: ③ 대화 영역과 ④ 입력창
 export default async function Home() {
   // 처음 화면의 키워드 예시는 용어 사전의 대표 표현에서 서버가 고른다
   const suggestions = await getSuggestions();
+  const logo = findLogo();
 
   return (
-    <main className="mx-auto grid min-h-dvh w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 md:h-dvh md:grid-cols-[19rem_minmax(0,1fr)] md:gap-8 md:px-8 md:py-10">
+    <main className="mx-auto grid min-h-dvh print:block print:h-auto w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 md:h-dvh md:grid-cols-[19rem_minmax(0,1fr)] md:gap-8 md:px-8 md:py-10">
       {/* 왼쪽: 제목과 안내 문구 */}
-      <aside className="flex flex-col gap-6 md:pt-6">
+      <aside className="flex flex-col gap-6 print:hidden md:pt-6">
+        {/* 왼쪽 맨 위: 기관 로고와 기관 이름 */}
+        <div className="flex items-center gap-3">
+          {logo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="" className="h-9 w-auto" />
+          )}
+          <span className="text-lg font-bold tracking-tight text-foreground">재정경제부</span>
+        </div>
         <div className="flex flex-col gap-3">
           <span className="w-fit rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-strong">
             한국 · 일본 · 중국
