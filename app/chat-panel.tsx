@@ -14,6 +14,8 @@ export default function ChatPanel() {
   // 지금까지 주고받은 질문 목록 (답변 기능은 작업 6 이후에 연결한다)
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  // 빈 질문을 보냈을 때 입력창 아래에 보여 주는 안내 (DESIGN 7번 오류 처리)
+  const [inputError, setInputError] = useState("");
   const nextId = useRef(1);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -25,8 +27,12 @@ export default function ChatPanel() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = input.trim();
-    if (!question) return;
+    if (!question) {
+      setInputError("질문을 입력해 주세요");
+      return;
+    }
 
+    setInputError("");
     setMessages((prev) => [...prev, { id: nextId.current++, question }]);
     setInput("");
   }
@@ -66,19 +72,26 @@ export default function ChatPanel() {
         <input
           type="text"
           value={input}
-          onChange={(event) => setInput(event.target.value)}
+          onChange={(event) => {
+            setInput(event.target.value);
+            setInputError("");
+          }}
           placeholder="키워드나 질문을 입력하세요"
           aria-label="질문 입력"
           className="min-w-0 flex-1 rounded-full border border-zinc-300 bg-white px-5 py-3 text-black outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-100"
         />
         <button
           type="submit"
-          disabled={input.trim() === ""}
-          className="rounded-full bg-zinc-900 px-6 py-3 font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="rounded-full bg-zinc-900 px-6 py-3 font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
         >
           보내기
         </button>
       </form>
+      {inputError && (
+        <p role="alert" className="mt-2 px-5 text-sm text-red-600 dark:text-red-400">
+          {inputError}
+        </p>
+      )}
     </div>
   );
 }
