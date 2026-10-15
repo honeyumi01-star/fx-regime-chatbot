@@ -122,17 +122,18 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-[34rem] flex-col md:min-h-0 rounded-3xl bg-white p-4 shadow-[0_8px_30px_rgba(25,31,40,0.06)] md:h-full md:p-6">
       {/* ③ 대화 영역: 질문과 답변이 위에서 아래로 쌓인다. aria-live로 새 답변을 화면 읽기 프로그램에 알린다 */}
       <section
         aria-label="대화"
         aria-live="polite"
-        className="flex-1 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+        className="flex-1 overflow-y-auto rounded-2xl bg-background p-4"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-10 text-center">
-            <p className="text-zinc-500 dark:text-zinc-400">
-              한국·일본·중국의 외환제도에 대해 궁금한 키워드를 입력해 보세요.
+            <p className="text-lg font-semibold text-foreground">
+              어떤 외환제도가 궁금하세요?<br />
+              <span className="text-base font-normal text-muted">키워드를 입력하거나 아래에서 골라 보세요.</span>
             </p>
             <SuggestionButtons keywords={initialSuggestions} disabled={isWaiting} onPick={submitQuestion} />
           </div>
@@ -141,7 +142,7 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
             {messages.map((message) => (
               <li key={message.id} className="flex flex-col gap-2">
                 {/* 내 질문 */}
-                <p className="self-end rounded-2xl bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-zinc-900">
+                <p className="self-end rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-white">
                   {message.question}
                 </p>
                 {/* 챗봇 답변 */}
@@ -171,22 +172,22 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
           }}
           placeholder="키워드나 질문을 입력하세요"
           aria-label="질문 입력"
-          className="min-w-0 flex-1 rounded-full border border-zinc-300 bg-white px-5 py-3 text-black outline-none focus:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:border-zinc-100"
+          className="min-w-0 flex-1 rounded-2xl border border-line bg-white px-5 py-3.5 text-foreground outline-none placeholder:text-zinc-400 focus:border-brand focus:ring-4 focus:ring-brand/15 disabled:cursor-not-allowed disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={isWaiting}
-          className="rounded-full bg-zinc-900 px-6 py-3 font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="rounded-2xl bg-brand px-6 py-3.5 font-semibold text-white transition-colors hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-40"
         >
           보내기
         </button>
       </form>
       {inputError && (
-        <p role="alert" className="mt-2 px-5 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-2 px-5 text-sm text-red-600">
           {inputError}
         </p>
       )}
-      <p className="mt-2 px-5 text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2 px-2 text-xs text-muted">
         각 질문은 독립적으로 처리돼요. 이전 질문은 반영되지 않아요. (질문은 300자까지)
       </p>
     </div>
@@ -212,7 +213,7 @@ function SuggestionButtons({
           type="button"
           disabled={disabled}
           onClick={() => onPick(keyword)}
-          className="rounded-full border border-zinc-300 bg-white px-4 py-1.5 text-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+          className="rounded-full bg-brand-soft px-4 py-2 text-sm font-medium text-brand-strong transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {keyword}
         </button>
@@ -234,11 +235,11 @@ function ReplyView({
   onPickKeyword: (keyword: string) => void;
 }) {
   const bubble =
-    "self-start rounded-2xl border border-zinc-200 bg-white px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800";
+    "self-start rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-[0_1px_4px_rgba(25,31,40,0.08)]";
 
   if (reply.state === "loading") {
     return (
-      <p className={`${bubble} animate-pulse text-zinc-500 dark:text-zinc-400`}>
+      <p className={`${bubble} animate-pulse text-muted`}>
         자료를 찾아 정리하고 있어요…
       </p>
     );
@@ -247,12 +248,12 @@ function ReplyView({
   if (reply.state === "error") {
     return (
       <div role="alert" className={`${bubble} flex flex-col items-start gap-2`}>
-        <p className="text-red-600 dark:text-red-400">{reply.message}</p>
+        <p className="text-red-600">{reply.message}</p>
         <button
           type="button"
           onClick={onRetry}
           disabled={disabled}
-          className="rounded-full border border-zinc-300 px-4 py-1 text-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:hover:bg-zinc-700"
+          className="rounded-full bg-brand-soft px-4 py-1.5 text-sm font-medium text-brand-strong hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           다시 시도
         </button>
@@ -265,7 +266,7 @@ function ReplyView({
   // 근거 없음 / 범위 밖: 안내 문구와 키워드 예시
   if (status === "no_source" || status === "out_of_scope") {
     return (
-      <div className={`${bubble} flex flex-col gap-3 text-zinc-700 dark:text-zinc-300`}>
+      <div className={`${bubble} flex flex-col gap-3 text-foreground`}>
         <p>
           {status === "no_source"
             ? "근거 문서를 찾지 못했습니다"
@@ -273,7 +274,7 @@ function ReplyView({
         </p>
         {suggestions.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">이런 키워드로 물어보세요</p>
+            <p className="text-sm text-muted">이런 키워드로 물어보세요</p>
             <SuggestionButtons keywords={suggestions} disabled={disabled} onPick={onPickKeyword} />
           </div>
         )}
@@ -283,16 +284,16 @@ function ReplyView({
 
   // 정상 답변: 한·일·중 비교표 + 칸마다 출처 번호 + 출처 목록
   return (
-    <div className={`${bubble} flex w-full flex-col gap-3 text-zinc-800 dark:text-zinc-200`}>
+    <div className={`${bubble} flex w-full flex-col gap-3 text-foreground`}>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[34rem] table-fixed border-collapse text-sm">
+        <table className="w-full min-w-[30rem] table-fixed border-collapse text-sm">
           <thead>
             <tr>
-              <th className="w-20 border border-zinc-200 bg-zinc-100 p-2 dark:border-zinc-700 dark:bg-zinc-900" />
+              <th className="w-20 border border-line bg-brand-soft p-2" />
               {COUNTRY_COLUMNS.map(([code, label]) => (
                 <th
                   key={code}
-                  className="border border-zinc-200 bg-zinc-100 p-2 text-left dark:border-zinc-700 dark:bg-zinc-900"
+                  className="border border-line bg-brand-soft p-2 text-left font-semibold text-brand-strong"
                 >
                   {label}
                 </th>
@@ -302,17 +303,17 @@ function ReplyView({
           <tbody>
             {ROWS.map(([key, rowLabel]) => (
               <tr key={key}>
-                <th className="border border-zinc-200 bg-zinc-100 p-2 text-left align-top font-medium dark:border-zinc-700 dark:bg-zinc-900">
+                <th className="border border-line bg-brand-soft p-2 text-left align-top font-semibold text-brand-strong">
                   {rowLabel}
                 </th>
                 {COUNTRY_COLUMNS.map(([code]) => {
                   const cell = countries[code][key];
                   return (
-                    <td key={code} className="border border-zinc-200 p-2 align-top dark:border-zinc-700">
+                    <td key={code} className="border border-line p-2 align-top">
                       {cell ? (
                         <>
                           {cell.text}{" "}
-                          <span className="whitespace-nowrap text-xs text-blue-700 dark:text-blue-300">
+                          <span className="whitespace-nowrap text-xs font-semibold text-brand">
                             {cell.sourceNumbers.map((n) => `[${n}]`).join("")}
                           </span>
                         </>
@@ -329,7 +330,7 @@ function ReplyView({
       </div>
 
       {sources.length > 0 && (
-        <ol className="flex flex-col gap-1 text-xs text-zinc-600 dark:text-zinc-400" aria-label="출처">
+        <ol className="flex flex-col gap-1 text-xs text-muted" aria-label="출처">
           {sources.map((source) => (
             <li key={source.number}>
               [{source.number}] {source.docTitle} · {source.institution} · 기준일 {source.asOf} ·{" "}
@@ -341,7 +342,7 @@ function ReplyView({
                     href={source.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline"
+                    className="text-brand underline"
                   >
                     원문
                   </a>
