@@ -214,32 +214,47 @@ function itemBlocks(item: ReportItem, answer: ApiAnswer, index: number, first: b
       });
   });
 
-  // (2) 국가별 비교 표
+  // (2) 국가별 비교 표: 샘플 보고서의 표처럼 본문과 같은 명조 계열 글자, 바깥 테두리는 굵게, 머리글 칸은 연한 파란 바탕.
+  // 가로는 구분(국가) / 제도 개요 / 주요 규제 / 최근 변경, 세로는 나라 4개로 해서 칸이 넓어 글자가 끊기지 않게 한다.
   if (item.compare.length > 0) {
+    const cols = ["제도 개요", "주요 규제", "최근 변경"] as const;
+    const cell = (country: "KR" | "JP" | "CN" | "US", label: (typeof cols)[number]) =>
+      item.compare.find((r) => r.label === label)?.[country] ?? null;
     blocks.push({ key: `${k}-h2`, node: <HeadingB text="(2) 국가별 비교" />, space: px(28), keepNext: true });
     blocks.push({
       key: `${k}-tb`,
       node: (
         <div>
-          <p className="rpt-body mb-[6pt] text-center text-[15pt]">&lt; 국가별 비교표 &gt;</p>
-          <table className="rpt-note w-full table-fixed border-collapse text-[10pt] leading-[1.4]">
+          <p className="rpt-body mb-[7pt] text-center text-[15pt] font-bold">&lt; 국가별 비교표 &gt;</p>
+          <table
+            className="rpt-body w-full table-fixed border-collapse text-[12pt] leading-[1.5]"
+            style={{ border: "1.5pt solid #000", wordBreak: "keep-all", overflowWrap: "break-word" }}
+          >
+            <colgroup>
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "28%" }} />
+            </colgroup>
             <thead>
               <tr>
-                <th className="w-[12%] border border-black bg-[#d9d9d9] py-[3pt] font-normal">구분</th>
-                {(["KR", "JP", "CN", "US"] as const).map((c) => (
-                  <th key={c} className="border border-black bg-[#d9d9d9] py-[3pt] font-normal">
-                    {COUNTRY_LABEL[c]}
+                <th className="border border-black bg-[#dce6f2] px-[4pt] py-[6pt] text-center font-bold">구분</th>
+                {cols.map((c) => (
+                  <th key={c} className="border border-black bg-[#dce6f2] px-[4pt] py-[6pt] text-center font-bold">
+                    {c}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {item.compare.map((row) => (
-                <tr key={row.label}>
-                  <td className="border border-black bg-[#f2f2f2] px-[4pt] py-[4pt] text-center align-middle">{row.label}</td>
-                  {(["KR", "JP", "CN", "US"] as const).map((c) => (
-                    <td key={c} className="border border-black px-[5pt] py-[4pt] align-top">
-                      {row[c] ?? "해당 자료 없음"}
+              {(["KR", "JP", "CN", "US"] as const).map((country) => (
+                <tr key={country}>
+                  <td className="border border-black px-[4pt] py-[7pt] text-center align-middle font-bold">
+                    {COUNTRY_LABEL[country]}
+                  </td>
+                  {cols.map((c) => (
+                    <td key={c} className="border border-black px-[7pt] py-[7pt] align-middle">
+                      {cell(country, c) ?? "해당 자료 없음"}
                     </td>
                   ))}
                 </tr>
@@ -253,9 +268,9 @@ function itemBlocks(item: ReportItem, answer: ApiAnswer, index: number, first: b
   }
 
   // (3) 세부 내용: 나라마다 □ 요지 + ㅇ 세부 + * 근거
-  if (item.details.length > 0) {
+  if (item.details.some((d) => d.lead.trim() || d.points.length > 0)) {
     blocks.push({ key: `${k}-h3`, node: <HeadingB text="(3) 세부 내용" />, space: px(30), keepNext: true });
-    item.details.forEach((d, i) => {
+    item.details.filter((d) => d.lead.trim() || d.points.length > 0).forEach((d, i) => {
       const country = COUNTRY_LABEL[d.country];
       blocks.push({
         key: `${k}-d${i}`,
@@ -463,7 +478,11 @@ function paginate(blocks: Block[], heights: number[]): number[][] {
     const cur = pages[pages.length - 1];
     if (b.breakBefore && cur.length > 0) startNewPage();
     let need = (pages[pages.length - 1].length === 0 ? 0 : b.space) + heights[i];
-    if (b.keepNext && blocks[i + 1]) need += blocks[i + 1].space + heights[i + 1];
+    // 제목 → □ → 첫 ㅇ처럼 이어 붙는(keepNext) 블록은 맨 끝 블록까지 같은 쪽에 놓는다
+    for (let j = i; blocks[j]?.keepNext && blocks[j + 1]; j++) {
+      need += blocks[j + 1].space + heights[j + 1];
+      if (!blocks[j + 1].keepNext) break;
+    }
     if (pages[pages.length - 1].length > 0 && used + need > CONTENT_HEIGHT) startNewPage();
     const page = pages[pages.length - 1];
     used += (page.length === 0 ? 0 : b.space) + heights[i];

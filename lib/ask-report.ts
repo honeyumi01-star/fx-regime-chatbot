@@ -175,6 +175,8 @@ async function askOne(request: ReportRequest): Promise<ReportBody> {
         d.sourceNumbers = keep(d.sourceNumbers);
         d.points.forEach((p) => (p.sourceNumbers = keep(p.sourceNumbers)));
       });
+      // 내용이 비어 있는 나라(자료 없음)는 세부 내용에서 뺀다
+      item.details = item.details.filter((d) => d.lead.trim() || d.points.length > 0);
       item.details.sort((a, b) => COUNTRY_CODES.indexOf(a.country) - COUNTRY_CODES.indexOf(b.country));
       item.compare.sort((a, b) => SECTION_HEADINGS.indexOf(a.label) - SECTION_HEADINGS.indexOf(b.label));
     });
