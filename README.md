@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 주요 국가 외환제도 분석 챗봇
 
-## Getting Started
+한국·일본·중국·미국의 **외환제도를 키워드로 검색하고 같은 기준의 표로 비교**해 주는 챗봇입니다.
+재정경제부 외환제도과 실무진이 각국 제도 자료를 일일이 찾아 비교하는 시간을 줄이려고 만들었습니다. (작성: 조유미)
 
-First, run the development server:
+> ⚠ 답변은 **참고용이며 공식 해석이 아닙니다.** 외국어 근거 문서는 AI가 번역했고 담당자 검토 전 단계입니다. 개인정보는 입력하지 마세요. 질문 내용은 답변을 만들기 위해 OpenAI로 전송됩니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 무엇을 할 수 있나요
+
+- **4개국 비교 답변**: 질문(예: "자본 이동 규제", "환율제도")을 입력하면 한국 → 일본 → 중국 → 미국 순서로 `제도 개요 / 주요 규제 / 최근 변경` 표를 만들어 줍니다.
+- **칸마다 출처 표시**: 모든 표 칸에 근거 번호가 붙고, 문서명·기관·기준일·조항이 함께 나옵니다. 출처 정보는 AI가 쓰지 않고 서버가 저장된 문서 정보로 채웁니다.
+- **근거가 없으면 추측하지 않음**: 등록된 문서에 없는 내용은 "해당 자료 없음" 또는 "근거 문서를 찾지 못했습니다"로 안내합니다.
+- **PDF 보고서 저장**: 받은 답변을 정부 부처 보고서(개조식) 형식의 A4 문서로 정리해 PDF로 저장합니다. 표지·목차·쪽 번호·핵심 요약 박스·국가별 비교표·각주(근거 조항)가 들어갑니다.
+- **지난 PDF 보고서 목록**: 저장한 보고서를 다시 보고 PDF로 내보낼 수 있습니다. 이 브라우저(localStorage)에만 저장하며 서버에는 저장하지 않습니다.
+- **제도 내용 출처 보기**: 왼쪽 아래 버튼을 누르면 답변의 근거로 저장해 둔 문서 목록이 작은 창으로 나옵니다.
+
+범위 밖(환율 예측·투자 조언, 다른 나라 제도, 법률 자문 등)은 답하지 않습니다.
+
+## 근거 문서 (`data/documents/`)
+
+| 나라 | 문서 | 기관 | 받은 곳 |
+|---|---|---|---|
+| 한국 | 외국환거래법 · 시행령 · **외국환거래규정**(고시) | 재정경제부(법제처) | 법제처 국가법령정보 Open API |
+| 한국 | 한국은행 외환 분야 자료 | 한국은행 | 한국은행 웹페이지 |
+| 일본 | 외국환 및 외국무역법 · 외국환령 · 외국환에 관한 성령 | 일본 정부·재무성 | e-Gov 법령 API (일본어 원문 → 한국어 번역) |
+| 중국 | 외환관리조례 · 경상항목 외환업무 지침(2020) · 자본항목 외환업무 지침(2024) | 국무원·국가외환관리국 | 중국 정부 사이트 (중국어 원문 → 한국어 번역) |
+| 미국 | 환율 협의·외환안정기금, 현금·해외계좌 신고, IEEPA, 재무부 환율 보고, 해외투자 규정 | 재무부 등 | 미국 법전·eCFR (영어 원문 → 한국어 번역) |
+
+- 모든 문서는 `reviewedBy: 미확인`(담당자 검토 전)입니다. 번역문은 숫자(금액·기간·조항 번호)만 원문과 기계 대조했습니다.
+- 미국은 외국환거래규정에 해당하는 단일 규정이 없어(변동환율, 자본 이동 자유) 가장 가까운 규정들을 골랐습니다.
+- 중국 자본항목 지침은 전문 중 해외직접투자·국경 간 신용 부분만 번역했습니다. 미국 법전 본문은 Cornell LII 미러에서 받았습니다.
+- 문서 후보와 한계는 `data/documents/_candidates.md`, 점검 결과는 `CHECK.md`에 있습니다.
+
+## 어떻게 동작하나요
+
+```
+질문 → 용어 사전으로 질문을 넓혀 관련 문서 조각 찾기(나라별 최대 4개)
+     → 조각과 질문을 AI(OpenAI Responses API)에 보내 정해진 형식의 답 받기
+     → 서버가 근거 번호를 검사하고 출처 정보를 문서 정보로 채우기
+     → 화면에 비교표 + 출처 표시
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 기술 스택
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · OpenAI API(`openai`, `zod`) · Vercel 배포
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 직접 실행해 보기
 
-## Learn More
+```bash
+npm install
+cp .env.example .env     # 또는 .env 파일을 직접 만든다 (아래 값 입력)
+npm run dev              # http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+`.env`에 넣을 값 (비밀 값은 저장소에 올리지 않습니다):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| 이름 | 설명 |
+|---|---|
+| `OPENAI_API_KEY` | OpenAI API 키 (필수, 서버에서만 사용) |
+| `OPENAI_MODEL` | 사용할 모델 이름 (선택, 기본 `gpt-5.6-luna`) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+그 밖의 명령: `npm run lint`(코드 검사), `npm run build`(배포용 빌드), `node scripts/eval.mjs <포트>`(시연용 질문 20개로 정답률·출처율·응답 시간 측정).
 
-## Deploy on Vercel
+## 폴더 구조
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/            화면(page.tsx), 챗봇(chat-panel.tsx), PDF 보고서(report-view.tsx), 지난 보고서(reports/), 서버 API(api/chat, api/report)
+lib/            문서 읽기·검색·AI 호출·출처 검사·요청 검사
+data/           근거 문서(documents/), 용어 사전(glossary.json), 시연용 질문(eval-questions.md)
+scripts/        평가 스크립트
+PRD.md · PLAN.md · DESIGN.md · CHECK.md   기획서 · 개발 계획 · 설계서 · 점검 결과
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 보안과 한계
+
+- API 키는 서버 코드에서만 읽고 브라우저로 나가지 않습니다. `.env`는 Git에 올리지 않습니다.
+- 같은 주소에서 1분에 10번(보고서는 3번)까지만 호출할 수 있게 제한하지만, 서버 한 대 안에서만 세므로 완전하지 않습니다. 공개 운영 전에는 OpenAI 월 사용 한도와 호스팅의 호출 제한을 함께 설정하세요.
+- 네 나라 비교 질문은 답변에 10초 이상 걸릴 수 있고, PDF 보고서는 15~20초 걸립니다.
+- PDF 보고서의 글꼴은 원본 보고서의 HY헤드라인M·휴먼명조 대신 브라우저가 읽을 수 있는 가장 비슷한 글꼴(HY견고딕·함초롬바탕)을 씁니다.
