@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import { COUNTRY_COLUMNS, ROWS, type ApiAnswer, type Message, type Reply, type ReportData } from "./chat-types";
 import ReportView, { pickAnswered, type AnsweredItem } from "./report-view";
 import { addReport, printReport } from "./report-store";
@@ -19,7 +18,9 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
   // 빈 질문을 보냈을 때 입력창 아래에 보여 주는 안내 (DESIGN 7번 오류 처리)
   const [inputError, setInputError] = useState("");
   // PDF 보고서: 저장 버튼을 누른 순간의 답변·정리된 글·작성일을 묶어 둔다
-  const [report, setReport] = useState<{ items: AnsweredItem[]; data: ReportData; date: string } | null>(null);
+  const [report, setReport] = useState<{ items: AnsweredItem[]; data: ReportData; date: string; createdAt: number } | null>(null);
+  // 보고서 쪽 나누기가 끝나는 순간을 기다리는 데 쓴다 (끝나기 전에 인쇄하면 쪽 번호가 어긋난다)
+  const reportReady = useRef<(() => void) | null>(null);
   const [reportBusy, setReportBusy] = useState(false);
   const [reportError, setReportError] = useState("");
   const nextId = useRef(1);
@@ -65,10 +66,13 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
     const date = `${now.getFullYear()}. ${now.getMonth() + 1}.`;
     // 지난 보고서 목록(오른쪽)에서 다시 볼 수 있게 이 브라우저에 보관한다
     addReport({ id: crypto.randomUUID(), createdAt: now.getTime(), date, items: target, data });
-    flushSync(() => {
-      setReport({ items: target, data, date });
-      setReportBusy(false);
+    const ready = new Promise<void>((resolve) => {
+      reportReady.current = resolve;
+      setTimeout(resolve, 8000); // 만약을 위한 시간 제한
     });
+    setReport({ items: target, data, date, createdAt: now.getTime() });
+    setReportBusy(false);
+    await ready;
     printReport(now.getTime());
   }
 
@@ -224,7 +228,15 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
       </p>
     </div>
     {/* 인쇄할 때만 보이는 보고서 */}
-    {report && <ReportView items={report.items} report={report.data} date={report.date} />}
+    {report && (
+      <ReportView
+        key={report.createdAt}
+        items={report.items}
+        report={report.data}
+        date={report.date}
+        onReady={() => reportReady.current?.()}
+      />
+    )}
     </>
   );
 }

@@ -35,7 +35,9 @@ function readList(): SavedReport[] {
   cachedRaw = raw;
   try {
     const parsed = raw ? (JSON.parse(raw) as SavedReport[]) : EMPTY;
-    cachedList = Array.isArray(parsed) ? parsed : EMPTY;
+    // 예전 형식(줄글 보고서)으로 저장된 것은 새 보고서 형식과 맞지 않아 목록에서 뺀다
+    const list = Array.isArray(parsed) ? parsed.filter((r) => r?.data?.items?.[0] && Array.isArray(r.data.items[0].directions)) : EMPTY;
+    cachedList = list.length ? list : EMPTY;
   } catch {
     cachedList = EMPTY;
   }

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 플러그인(bkit)이 쓰는 폴더: 올리지 않는다
+/.bkit/

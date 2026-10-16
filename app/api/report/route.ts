@@ -21,6 +21,9 @@ function errorResponse(code: keyof typeof ERRORS) {
 // 보고서는 AI를 크게 쓰므로 1분에 3번까지만 허용한다
 const isRateLimited = createRateLimiter(3);
 
+// Vercel에서 서버 함수가 기다릴 수 있는 최대 시간(초). 보고서 만들기는 답변보다 오래 걸린다.
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return errorResponse("FORBIDDEN");
   if (!request.headers.get("content-type")?.includes("application/json")) {

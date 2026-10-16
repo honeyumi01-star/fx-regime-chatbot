@@ -8,6 +8,8 @@ import { loadDocuments, type StoredChunk } from "./documents";
 
 // 질문마다 나라별로 가져올 조각 수. 기본 2개, 문서가 2개 이상인 나라는 "문서 수 + 1"개 (DESIGN §3 ④)
 const DEFAULT_PER_COUNTRY = 2;
+// 문서가 많아도 나라당 이 개수까지만 AI에게 보낸다 (입력이 길어지면 10초 안에 답하기 어렵다)
+const MAX_PER_COUNTRY = 4;
 
 type GlossaryGroup = { name: string; terms: string[] };
 
@@ -98,7 +100,7 @@ export async function findChunks(question: string): Promise<StoredChunk[]> {
   const picked: StoredChunk[] = [];
   for (const country of COUNTRY_CODES) {
     const docCount = new Set(chunks.filter((c) => c.country === country).map((c) => c.docId)).size;
-    const slots = docCount > 1 ? docCount + 1 : DEFAULT_PER_COUNTRY;
+    const slots = Math.min(docCount > 1 ? docCount + 1 : DEFAULT_PER_COUNTRY, MAX_PER_COUNTRY);
     const ranked = scored
       .filter((item) => item.chunk.country === country && item.score > 0)
       .sort((a, b) => b.score - a.score);

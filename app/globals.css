@@ -28,12 +28,13 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* PDF 저장(인쇄) 설정: A4 용지, 흰 바탕, 표 머리 회색도 그대로 인쇄 */
+/* PDF 저장(인쇄) 설정: A4 용지, 여백은 보고서의 쪽 틀(.rpt-page)이 직접 갖는다. 흰 바탕, 색 상자도 그대로 인쇄 */
 @media print {
   @page {
     size: A4;
-    margin: 20mm 18mm;
+    margin: 0;
   }
+  html,
   body {
     background: #fff;
     -webkit-print-color-adjust: exact;
@@ -41,14 +42,55 @@ body {
   }
 }
 
-/* PDF 보고서 글꼴: 정부 보고서 형식. 해당 글꼴이 컴퓨터에 없으면 뒤에 적은 비슷한 글꼴로 대신한다 */
+/* PDF 보고서 글꼴: 기획재정부 전략계획 보고서와 같은 구성.
+   제목은 HY헤드라인M, 본문은 휴먼명조, 각주·표는 맑은 고딕, 쪽 번호는 굴림이 원본이다.
+   HY헤드라인M·휴먼명조는 Chrome이 읽지 못하므로(한컴 글꼴 파일을 브라우저가 거부) 가장 비슷한 HY견고딕·함초롬바탕으로 대신한다.
+   다른 PC에서 앞의 글꼴이 보이면 그 글꼴이 먼저 쓰인다 */
+.rpt-root {
+  letter-spacing: 0;
+  color: #000;
+}
 .rpt-head {
-  font-family: "HY헤드라인M", "HYHeadLine M", "한컴 고딕", "Malgun Gothic", sans-serif;
-  font-weight: 700;
+  font-family: "HY헤드라인M", "HYHeadLine-Medium", "HY견고딕", "HCR Dotum", "한컴 고딕", "Malgun Gothic", sans-serif;
+  font-weight: 400;
 }
 .rpt-body {
-  font-family: "휴먼명조", "HumanMyeongjo", "함초롬바탕", "HCR Batang", "바탕", "Batang", "Noto Serif KR", serif;
+  font-family: "휴먼명조", "HumanMyeongjo", "HCR Batang", "함초롬바탕", "HY신명조", "바탕", "Batang", "Noto Serif KR", serif;
 }
 .rpt-note {
+  font-family: "맑은 고딕", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+.rpt-num {
   font-family: "굴림", "Gulim", "Malgun Gothic", sans-serif;
+}
+
+/* 보고서 쪽 틀: A4 한 장. 본문 쪽은 위 26mm, 좌우 20mm 여백 (샘플 PDF를 잰 값) */
+.rpt-page {
+  width: 210mm;
+  height: 296.4mm;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.rpt-content {
+  padding: 26mm 20mm 0 20mm;
+}
+/* 화면 미리보기: 종이가 위아래로 쌓인다 */
+.rpt-zoomwrap .rpt-page {
+  margin: 0 auto 14px;
+  box-shadow: 0 2px 14px rgba(25, 31, 40, 0.18);
+}
+@media print {
+  .rpt-pages {
+    zoom: 1 !important;
+  }
+  .rpt-zoomwrap .rpt-page {
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .rpt-zoomwrap .rpt-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
 }

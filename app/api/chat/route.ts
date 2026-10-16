@@ -31,6 +31,9 @@ function errorResponse(code: keyof typeof ERRORS) {
 // 호출 횟수 제한: 같은 주소(IP)에서 1분에 10번까지 (lib/guard.ts)
 const isRateLimited = createRateLimiter(10);
 
+// Vercel에서 서버 함수가 기다릴 수 있는 최대 시간(초). 기본값보다 길게 둔다.
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   const startedAt = Date.now(); // 서버 전체 10초 안에 끝내기 위해 시작 시각을 적어 둔다
   if (!isSameOrigin(request)) return errorResponse("FORBIDDEN");

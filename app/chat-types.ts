@@ -43,20 +43,21 @@ export const ROWS = [
   ["recent", "최근 변경"],
 ] as const;
 
-// /api/report가 돌려주는 줄글 보고서 (lib/ask-report.ts의 ReportBody와 같은 모양)
-type SourcedText = { text: string; sourceNumbers: number[] };
-export type ReportData = {
-  items: {
-    title: string;
-    summary: SourcedText[];
-    sections: {
-      heading: "제도 개요" | "주요 규제" | "최근 변경";
-      paragraphs: {
-        country: "KR" | "JP" | "CN" | "US";
-        text: string;
-        sourceNumbers: number[];
-        points: SourcedText[];
-      }[];
-    }[];
-  }[];
+// /api/report가 돌려주는 보고서 글 (lib/ask-report.ts의 ReportBody와 같은 모양, 샘플 보고서의 구성)
+// 문장 안의 **굵게**는 화면에서 굵은 글씨로 바뀐다.
+export type ReportPoint = { text: string; note: string | null; sourceNumbers: number[] };
+export type ReportItem = {
+  title: string; // 검토과제 이름
+  directions: string[]; // 기본 방향 박스의 ◇ 문장
+  overview: { lead: string; subs: string[]; arrow: string | null }[]; // (1) 주요 내용
+  compare: {
+    label: "제도 개요" | "주요 규제" | "최근 변경";
+    KR: string | null;
+    JP: string | null;
+    CN: string | null;
+    US: string | null;
+  }[]; // (2) 국가별 비교 표
+  details: { country: "KR" | "JP" | "CN" | "US"; lead: string; points: ReportPoint[]; sourceNumbers: number[] }[]; // (3) 세부 내용
+  cautions: { lead: string; subs: string[] }[]; // (4) 유의사항
 };
+export type ReportData = { items: ReportItem[] };
