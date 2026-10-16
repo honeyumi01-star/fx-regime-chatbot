@@ -14,7 +14,7 @@ const DEFAULT_MODEL = "gpt-5.6-luna";
 export const TIMEOUT_MS = 15_000;
 
 // AI에게 보내는 조각 하나의 최대 글자 수 (긴 조각은 앞부분만 보낸다)
-const MAX_CHUNK_CHARS = 1800;
+const MAX_CHUNK_CHARS = 3000;
 
 // AI에게 건넬 문서 조각 하나. (작업 2에서 만들 문서 저장소가 이 모양으로 넘겨 준다)
 export type Chunk = {
