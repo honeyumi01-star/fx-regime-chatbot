@@ -29,7 +29,7 @@ export default async function Home() {
             <img src={logo} alt="" className="h-11 w-auto" />
           )}
           <span className="flex items-baseline gap-2 whitespace-nowrap">
-            <span className="text-[1.6rem] leading-none font-medium tracking-tight text-[#4a4a4a]">재정경제부</span>
+            <span className="text-[1.6rem] leading-none font-bold tracking-tight text-[#4a4a4a]">재정경제부</span>
             <span className="text-base font-semibold text-brand-strong">외환제도과</span>
           </span>
         </div>
