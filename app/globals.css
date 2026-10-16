@@ -40,3 +40,15 @@ body {
     print-color-adjust: exact;
   }
 }
+
+/* PDF 보고서 글꼴: 정부 보고서 형식. 해당 글꼴이 컴퓨터에 없으면 뒤에 적은 비슷한 글꼴로 대신한다 */
+.rpt-head {
+  font-family: "HY헤드라인M", "HYHeadLine M", "한컴 고딕", "Malgun Gothic", sans-serif;
+  font-weight: 700;
+}
+.rpt-body {
+  font-family: "휴먼명조", "HumanMyeongjo", "함초롬바탕", "HCR Batang", "바탕", "Batang", "Noto Serif KR", serif;
+}
+.rpt-note {
+  font-family: "굴림", "Gulim", "Malgun Gothic", sans-serif;
+}

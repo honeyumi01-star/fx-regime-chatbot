@@ -40,3 +40,21 @@ export const ROWS = [
   ["regulation", "주요 규제"],
   ["recent", "최근 변경"],
 ] as const;
+
+// /api/report가 돌려주는 줄글 보고서 (lib/ask-report.ts의 ReportBody와 같은 모양)
+type SourcedText = { text: string; sourceNumbers: number[] };
+export type ReportData = {
+  items: {
+    title: string;
+    summary: SourcedText[];
+    sections: {
+      heading: "제도 개요" | "주요 규제" | "최근 변경";
+      paragraphs: {
+        country: "KR" | "JP" | "CN";
+        text: string;
+        sourceNumbers: number[];
+        points: SourcedText[];
+      }[];
+    }[];
+  }[];
+};

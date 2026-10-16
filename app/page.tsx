@@ -2,6 +2,7 @@ import { getSuggestions } from "@/lib/search";
 import fs from "node:fs";
 import path from "node:path";
 import ChatPanel from "./chat-panel";
+import ReportHistory from "./report-history";
 
 // 기관 로고 파일: public 폴더에 gov-logo.png / .svg / .jpg 중 하나를 넣으면 제목 위에 나온다 (없으면 이름만 표시)
 function findLogo(): string | null {
@@ -18,16 +19,19 @@ export default async function Home() {
   const logo = findLogo();
 
   return (
-    <main className="mx-auto grid min-h-dvh print:block print:h-auto w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 md:h-dvh md:grid-cols-[19rem_minmax(0,1fr)] md:gap-8 md:px-8 md:py-10">
+    <main className="mx-auto grid min-h-dvh print:block print:h-auto w-full max-w-7xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 md:h-dvh md:grid-cols-[19rem_minmax(0,1fr)] md:gap-8 md:px-8 md:py-10">
       {/* 왼쪽: 제목과 안내 문구 */}
       <aside className="flex flex-col gap-6 print:hidden md:pt-6">
-        {/* 왼쪽 맨 위: 기관 로고와 기관 이름 */}
+        {/* 왼쪽 맨 위: 정부 상징 + 기관 이름 + 담당 부서 (로고 이미지와 같은 가로 배치) */}
         <div className="flex items-center gap-3">
           {logo && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt="" className="h-9 w-auto" />
+            <img src={logo} alt="" className="h-11 w-auto" />
           )}
-          <span className="text-lg font-bold tracking-tight text-foreground">재정경제부</span>
+          <span className="flex items-baseline gap-2 whitespace-nowrap">
+            <span className="text-[1.6rem] leading-none font-medium tracking-tight text-[#4a4a4a]">재정경제부</span>
+            <span className="text-base font-semibold text-brand-strong">외환제도과</span>
+          </span>
         </div>
         <div className="flex flex-col gap-3">
           <span className="w-fit rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-strong">
@@ -45,15 +49,19 @@ export default async function Home() {
             궁금한 키워드를 입력하면 세 나라의 제도를 같은 기준의 표로 비교하고, 칸마다 근거 문서를 붙여 드려요.
           </p>
         </div>
-        {/* ② 안내 문구: 항상 보인다 (DESIGN §2, PRD §7) */}
-        <p className="rounded-2xl bg-brand-soft px-5 py-4 text-sm leading-relaxed text-brand-strong">
+        {/* ② 안내 문구: 항상 보인다 (DESIGN §2, PRD §7). 왼쪽 맨 아래에 작게 둔다 */}
+        <p className="mt-auto text-[10px] leading-snug text-muted/80">
           ⚠ 답변은 참고용이며 공식 해석이 아닙니다. 개인정보는 입력하지 마세요. 질문 내용은 답변을 만들기 위해
           OpenAI로 전송됩니다.
         </p>
       </aside>
 
-      {/* 오른쪽: 대화 영역과 입력창 */}
-      <ChatPanel initialSuggestions={suggestions} />
+      {/* 오른쪽: 챗봇(2/3)과 지난 보고서 목록(1/3) */}
+      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] gap-4 md:h-full md:grid-rows-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] xl:grid-rows-1 print:block">
+        <ChatPanel initialSuggestions={suggestions} />
+        {/* 오른쪽 1/3: 지난 PDF 보고서 목록과 전체 목록 버튼 */}
+        <ReportHistory />
+      </div>
     </main>
   );
 }

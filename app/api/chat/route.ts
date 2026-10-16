@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { AskAiError, TIMEOUT_MS, askAi } from "@/lib/ask-ai";
 import { loadDocuments } from "@/lib/documents";
+import { clientIp, createRateLimiter, isSameOrigin } from "@/lib/guard";
 import { getSuggestions, findChunks } from "@/lib/search";
 import { checkAnswer, emptyCountry } from "@/lib/sources";
 
@@ -27,36 +28,8 @@ function errorResponse(code: keyof typeof ERRORS) {
   return Response.json({ error: { code, message } }, { status });
 }
 
-// 호출 횟수 제한: 같은 주소(IP)에서 1분에 10번까지 (비용 폭주 방지, CHECK 3번).
-// 서버 한 대의 기억 안에서만 세므로 완전하지 않다. 배포 때 Vercel 방화벽 제한도 함께 켠다.
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60_000;
-const hits = new Map<string, number[]>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((time) => now - time < RATE_WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) {
-    // 기억이 너무 커지지 않게 오래된 주소를 지운다
-    for (const [key, times] of hits) {
-      if (times.every((time) => now - time >= RATE_WINDOW_MS)) hits.delete(key);
-    }
-  }
-  return recent.length > RATE_LIMIT;
-}
-
-// 다른 사이트의 페이지가 방문자 브라우저로 이 API를 부르는 것을 막는다
-function isSameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true; // 브라우저가 아닌 직접 호출(curl 등)은 Origin이 없다
-  try {
-    return new URL(origin).host === request.headers.get("host");
-  } catch {
-    return false;
-  }
-}
+// 호출 횟수 제한: 같은 주소(IP)에서 1분에 10번까지 (lib/guard.ts)
+const isRateLimited = createRateLimiter(10);
 
 export async function POST(request: Request) {
   const startedAt = Date.now(); // 서버 전체 10초 안에 끝내기 위해 시작 시각을 적어 둔다
@@ -65,8 +38,7 @@ export async function POST(request: Request) {
     return errorResponse("INVALID_QUESTION");
   }
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
-  if (isRateLimited(ip)) return errorResponse("RATE_LIMITED");
+  if (isRateLimited(clientIp(request))) return errorResponse("RATE_LIMITED");
 
   // 1) 질문 검사: 깨진 JSON이나 형식이 다른 요청은 400
   let question: string;

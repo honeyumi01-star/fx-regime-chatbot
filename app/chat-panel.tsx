@@ -2,22 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { COUNTRY_COLUMNS, ROWS, type ApiAnswer, type Message, type Reply } from "./chat-types";
-import ReportView, { pickAnswered } from "./report-view";
+import { COUNTRY_COLUMNS, ROWS, type ApiAnswer, type Message, type Reply, type ReportData } from "./chat-types";
+import ReportView, { pickAnswered, type AnsweredItem } from "./report-view";
+import { addReport, printReport } from "./report-store";
 
 // Design Ref: §2 화면 구성 — ③ 대화 영역(비교표·출처)과 ④ 입력창, 상태표
 // Plan SC: 작업 4·5·8·9·10·11 — 비교표, 칸별 출처, 근거 없음·범위 밖 안내, 오류 시 다시 시도
 
 // 서버에 연결하지 못했을 때(인터넷 끊김 등) 보여 주는 고정 문구
 const NETWORK_ERROR_MESSAGE = "답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요";
+const REPORT_ERROR_MESSAGE = "보고서를 만들지 못했어요. 잠시 후 다시 시도해 주세요";
 
 export default function ChatPanel({ initialSuggestions }: { initialSuggestions: string[] }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   // 빈 질문을 보냈을 때 입력창 아래에 보여 주는 안내 (DESIGN 7번 오류 처리)
   const [inputError, setInputError] = useState("");
-  // PDF 보고서에 적을 작성일 (저장 버튼을 누른 순간의 날짜)
-  const [reportDate, setReportDate] = useState("");
+  // PDF 보고서: 저장 버튼을 누른 순간의 답변·정리된 글·작성일을 묶어 둔다
+  const [report, setReport] = useState<{ items: AnsweredItem[]; data: ReportData; date: string } | null>(null);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
   const nextId = useRef(1);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -27,19 +31,45 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
   // 보고서에 들어갈 답변: 정상 답변만
   const answered = pickAnswered(messages);
 
-  // PDF로 저장: 보고서 화면을 인쇄 창으로 띄운다. 인쇄 창에서 "PDF로 저장"을 고르면 파일이 된다.
-  function saveAsPdf() {
-    if (answered.length === 0) return;
+  // PDF로 저장: 서버에서 답변을 보고서 줄글로 정리해 받은 뒤, 보고서 화면을 인쇄 창으로 띄운다.
+  // 인쇄 창에서 "PDF로 저장"을 고르면 파일이 된다. 최근 답변 5개까지만 담는다.
+  async function saveAsPdf() {
+    if (answered.length === 0 || reportBusy) return;
+    const target = answered.slice(-5);
+    setReportBusy(true);
+    setReportError("");
+
+    let data: ReportData;
+    try {
+      const response = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: target.map((item) => ({ question: item.question, countries: item.answer.countries })),
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setReportError(body?.error?.message ?? REPORT_ERROR_MESSAGE);
+        setReportBusy(false);
+        return;
+      }
+      data = body as ReportData;
+    } catch {
+      setReportError(REPORT_ERROR_MESSAGE);
+      setReportBusy(false);
+      return;
+    }
+
     const now = new Date();
-    flushSync(() =>
-      setReportDate(now.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })),
-    );
-    // 인쇄 창이 PDF 파일 이름으로 쓰는 탭 제목을 잠깐 바꿨다가 되돌린다
-    const originalTitle = document.title;
-    const pad = (n: number) => String(n).padStart(2, "0");
-    document.title = `외환제도_비교_검토보고서_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-    window.addEventListener("afterprint", () => (document.title = originalTitle), { once: true });
-    window.print();
+    const date = `${now.getFullYear()}. ${now.getMonth() + 1}.`;
+    // 지난 보고서 목록(오른쪽)에서 다시 볼 수 있게 이 브라우저에 보관한다
+    addReport({ id: crypto.randomUUID(), createdAt: now.getTime(), date, items: target, data });
+    flushSync(() => {
+      setReport({ items: target, data, date });
+      setReportBusy(false);
+    });
+    printReport(now.getTime());
   }
 
   // 새 질문이나 답변이 생기면 대화 영역을 맨 아래로 내린다
@@ -111,14 +141,19 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
         <p className="text-xs text-muted">답변을 정부 보고서 형식으로 정리해 PDF로 저장할 수 있어요</p>
         <button
           type="button"
-          onClick={saveAsPdf}
-          disabled={answered.length === 0}
+          onClick={() => void saveAsPdf()}
+          disabled={answered.length === 0 || reportBusy}
           title={answered.length === 0 ? "답변이 나오면 저장할 수 있어요" : "인쇄 창에서 대상을 PDF로 저장으로 고르세요"}
           className="shrink-0 rounded-full bg-brand-soft px-4 py-1.5 text-sm font-semibold text-brand-strong transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          PDF로 저장
+          {reportBusy ? "보고서 작성 중…" : "PDF로 저장"}
         </button>
       </div>
+      {reportError && (
+        <p role="alert" className="mb-3 text-sm text-red-600">
+          {reportError}
+        </p>
+      )}
 
       {/* ③ 대화 영역: 질문과 답변이 위에서 아래로 쌓인다. aria-live로 새 답변을 화면 읽기 프로그램에 알린다 */}
       <section
@@ -189,7 +224,7 @@ export default function ChatPanel({ initialSuggestions }: { initialSuggestions: 
       </p>
     </div>
     {/* 인쇄할 때만 보이는 보고서 */}
-    <ReportView items={answered} date={reportDate} />
+    {report && <ReportView items={report.items} report={report.data} date={report.date} />}
     </>
   );
 }
