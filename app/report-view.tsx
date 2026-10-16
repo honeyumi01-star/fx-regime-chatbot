@@ -19,7 +19,7 @@ export function pickAnswered(messages: Message[]): AnsweredItem[] {
 }
 
 const ROMAN = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ"];
-const COUNTRY_LABEL = Object.fromEntries(COUNTRY_COLUMNS) as Record<"KR" | "JP" | "CN", string>;
+const COUNTRY_LABEL = Object.fromEntries(COUNTRY_COLUMNS) as Record<"KR" | "JP" | "CN" | "US", string>;
 const marks = (nums: number[]) => (nums.length ? ` [${nums.join(", ")}]` : "");
 
 // 대제목: 남색 네모 안의 로마숫자 + 제목, 위아래 줄
@@ -70,7 +70,7 @@ export default function ReportView({
         <div className="w-full" />
         <div className="w-full">
           <div className="h-[5px] w-full bg-[#5c8df0]" />
-          <h1 className="rpt-head my-8 text-[30pt] leading-tight">한·중·일 외환제도 비교 검토</h1>
+          <h1 className="rpt-head my-8 text-[30pt] leading-tight">주요 국가 외환제도 비교 검토</h1>
           <p className="rpt-head -mt-4 mb-8 text-[18pt]">({subtitle})</p>
           <div className="h-[5px] w-full bg-[#5c8df0]" />
         </div>
@@ -101,7 +101,7 @@ export default function ReportView({
         <Chapter no={0} title="검토 개요" />
         <Section label="(1) 검토 배경 및 목적" />
         <p className="mb-3">
-          □ <b>한국·일본·중국의 외환제도</b>를 같은 기준(제도 개요·주요 규제·최근 변경)으로 비교하여, 외환제도 업무
+          □ <b>한국·일본·중국·미국의 외환제도</b>를 같은 기준(제도 개요·주요 규제·최근 변경)으로 비교하여, 외환제도 업무
           검토 시 <b>참고 자료</b>로 활용하고자 함
         </p>
         <Section label="(2) 검토 방법" />

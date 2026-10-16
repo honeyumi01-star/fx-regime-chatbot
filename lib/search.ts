@@ -3,6 +3,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { COUNTRY_CODES } from "./countries";
 import { loadDocuments, type StoredChunk } from "./documents";
 
 // 질문마다 나라별로 가져올 조각 수. 기본 2개, 문서가 2개 이상인 나라는 "문서 수 + 1"개 (DESIGN §3 ④)
@@ -95,7 +96,7 @@ export async function findChunks(question: string): Promise<StoredChunk[]> {
   // 한 나라에 문서가 여러 개면(예: 한국은행 자료와 법 조문) 문서마다 가장 좋은 조각을 먼저 하나씩 담아,
   // 한 문서의 조각이 자리를 모두 차지하지 않게 한다.
   const picked: StoredChunk[] = [];
-  for (const country of ["KR", "JP", "CN"] as const) {
+  for (const country of COUNTRY_CODES) {
     const docCount = new Set(chunks.filter((c) => c.country === country).map((c) => c.docId)).size;
     const slots = docCount > 1 ? docCount + 1 : DEFAULT_PER_COUNTRY;
     const ranked = scored

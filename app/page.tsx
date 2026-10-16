@@ -1,8 +1,10 @@
+import { loadDocuments } from "@/lib/documents";
 import { getSuggestions } from "@/lib/search";
 import fs from "node:fs";
 import path from "node:path";
 import ChatPanel from "./chat-panel";
 import ReportHistory from "./report-history";
+import SourceDialog from "./source-dialog";
 
 // 기관 로고 파일: public 폴더에 gov-logo.png / .svg / .jpg 중 하나를 넣으면 제목 위에 나온다 (없으면 이름만 표시)
 function findLogo(): string | null {
@@ -12,10 +14,47 @@ function findLogo(): string | null {
   return null;
 }
 
-// Design Ref: §2 화면 구성 — 왼쪽: ① 제목 + ② 안내 문구 / 오른쪽: ③ 대화 영역과 ④ 입력창
-export default async function Home() {
+// 괄호 설명은 줄여서 보여 준다. 다만 미국 법령 번호(U.S.C., CFR)는 출처 확인에 필요하므로 남긴다.
+function shortTitle(title: string): string {
+  return title.replace(/\s*\(([^)]*)\)/g, (whole, inner: string) => (/U\.S\.C|CFR/.test(inner) ? whole : "")).trim();
+}
+// 기관 이름: 괄호와 뒤의 부가 설명을 뺀 앞부분
+function shortInstitution(institution: string): string {
+  return institution.replace(/\s*\([^)]*\)/g, "").split(",")[0].trim();
+}
+
+// 파일(용어 사전, 근거 문서)에서 읽는 고정 자료는 빌드 때 한 번 읽어 기억해 둔다 ("use cache").
+// 이렇게 하지 않으면 이 버전의 Next.js가 페이지를 미리 만들지 못한다.
+async function getHomeData() {
+  "use cache";
   // 처음 화면의 키워드 예시는 용어 사전의 대표 표현에서 서버가 고른다
   const suggestions = await getSuggestions();
+  // 제도 내용을 어디서 가져왔는지: 저장된 근거 문서를 나라별(한·중·일·미 순)로 묶는다
+  const { docs } = await loadDocuments();
+  const COUNTRY_ORDER = [
+    ["KR", "한국"],
+    ["JP", "일본"],
+    ["CN", "중국"],
+    ["US", "미국"],
+  ] as const;
+  const sourcesByCountry = COUNTRY_ORDER.map(([code, label]) => ({
+    label,
+    docs: docs
+      .filter((doc) => doc.country === code)
+      .map((doc) => ({
+        id: doc.id,
+        title: shortTitle(doc.title),
+        institution: shortInstitution(doc.institution),
+        asOf: doc.asOf,
+        sourceUrl: doc.sourceUrl,
+      })),
+  })).filter((group) => group.docs.length > 0);
+  return { suggestions, sourcesByCountry };
+}
+
+// Design Ref: §2 화면 구성 — 왼쪽: ① 제목 + 근거 문서 출처 버튼 + ② 안내 문구 / 오른쪽: ③ 대화 영역과 ④ 입력창
+export default async function Home() {
+  const { suggestions, sourcesByCountry } = await getHomeData();
   const logo = findLogo();
 
   return (
@@ -35,25 +74,30 @@ export default async function Home() {
         </div>
         <div className="flex flex-col gap-3">
           <span className="w-fit rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-strong">
-            한국 · 일본 · 중국
+            한국 · 일본 · 중국 · 미국
           </span>
           {/* 앱 이름: 화면에서 가장 큰 제목 */}
           <h1 className="text-4xl leading-tight font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
-            한중일
+            주요 국가
             <br />
             <span className="text-brand">외환제도</span> 분석
             <br />
             챗봇
           </h1>
           <p className="text-base leading-relaxed text-muted">
-            궁금한 키워드를 입력하면 세 나라의 제도를 같은 기준의 표로 비교하고, 칸마다 근거 문서를 붙여 드려요.
+            궁금한 키워드를 입력하면 네 나라의 제도를 같은 기준의 표로 비교하고, 칸마다 근거 문서를 붙여 드려요.
           </p>
         </div>
-        {/* ② 안내 문구: 항상 보인다 (DESIGN §2, PRD §7). 왼쪽 맨 아래에 작게 둔다 */}
-        <p className="mt-auto text-[10px] leading-snug text-muted/80">
-          ⚠ 답변은 참고용이며 공식 해석이 아닙니다. 개인정보는 입력하지 마세요. 질문 내용은 답변을 만들기 위해
-          OpenAI로 전송됩니다.
-        </p>
+        {/* 왼쪽 맨 아래: 근거 문서 출처(위)와 ② 안내 문구(아래). 둘 다 작게 둔다 */}
+        <div className="mt-auto flex flex-col gap-2 text-[10px] leading-snug text-muted/80">
+          {/* 제도 내용 출처: 목록이 길어서 버튼을 누르면 작은 창으로 보여 준다 */}
+          <SourceDialog groups={sourcesByCountry} />
+          {/* ② 안내 문구: 항상 보인다 (DESIGN §2, PRD §7) */}
+          <p>
+            ⚠ 답변은 참고용이며 공식 해석이 아닙니다. 개인정보는 입력하지 마세요. 질문 내용은 답변을 만들기 위해
+            OpenAI로 전송됩니다.
+          </p>
+        </div>
       </aside>
 
       {/* 오른쪽: 챗봇(2/3)과 지난 보고서 목록(1/3) */}

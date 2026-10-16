@@ -2,6 +2,7 @@
 // 출처는 AI가 쓰지 않고, 우리가 저장해 둔 문서 정보에서만 가져온다.
 
 import type { Answer } from "./ask-ai";
+import { COUNTRY_CODES, type CountryCode } from "./countries";
 import type { DocMeta, StoredChunk } from "./documents";
 
 export type Source = {
@@ -23,15 +24,20 @@ export type CheckedCountry = {
 };
 export type CheckedAnswer = {
   status: Answer["status"];
-  countries: { KR: CheckedCountry; JP: CheckedCountry; CN: CheckedCountry };
+  countries: Record<CountryCode, CheckedCountry>;
   sources: Source[];
 };
 
 const CELL_KEYS = ["overview", "regulation", "recent"] as const;
-const COUNTRY_KEYS = ["KR", "JP", "CN"] as const;
+const COUNTRY_KEYS = COUNTRY_CODES;
 
 export function emptyCountry(): CheckedCountry {
   return { overview: null, regulation: null, recent: null };
+}
+
+// 모든 나라의 칸을 비운 답변 틀
+export function emptyCountries(): Record<CountryCode, CheckedCountry> {
+  return { KR: emptyCountry(), JP: emptyCountry(), CN: emptyCountry(), US: emptyCountry() };
 }
 
 // 이번 질문에 AI에게 보낸 조각(sent) 안의 번호이고, 칸의 나라와 같은 나라의 조각일 때만 근거로 인정한다.
@@ -60,7 +66,7 @@ export function checkAnswer(answer: Answer, sent: StoredChunk[], docs: DocMeta[]
     return number;
   }
 
-  const countries = { KR: emptyCountry(), JP: emptyCountry(), CN: emptyCountry() };
+  const countries = emptyCountries();
 
   if (answer.status === "ok") {
     for (const country of COUNTRY_KEYS) {

@@ -305,7 +305,7 @@ function ReplyView({
         <p>
           {status === "no_source"
             ? "근거 문서를 찾지 못했습니다"
-            : "한국·일본·중국의 외환제도만 다룹니다"}
+            : "한국·일본·중국·미국의 외환제도만 다룹니다"}
         </p>
         {suggestions.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -321,7 +321,7 @@ function ReplyView({
   return (
     <div className={`${bubble} flex w-full flex-col gap-3 text-foreground`}>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[30rem] table-fixed border-collapse text-sm">
+        <table className="w-full min-w-[40rem] table-fixed border-collapse text-sm">
           <thead>
             <tr>
               <th className="w-20 border border-line bg-brand-soft p-2" />

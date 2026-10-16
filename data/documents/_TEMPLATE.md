@@ -14,7 +14,7 @@ reviewedBy: 미확인
 <!--
 근거 문서 양식 (DESIGN.md 4.1 기준)
 - 파일 하나가 문서 하나다. 파일 이름은 id와 같게 쓴다. (예: kr-01.md)
-- country는 KR / JP / CN 중 하나, sourceLanguage는 ko / ja / zh / en 중 하나.
+- country는 KR / JP / CN / US 중 하나, sourceLanguage는 ko / ja / zh / en 중 하나.
 - 아래 본문은 조항 또는 절 단위로 나눈다. `## ` 제목 하나가 조각 하나가 된다.
 - 제목에는 법령이면 조항(예: 제○조), 아니면 절 제목(예: 2. 환율제도)을 쓴다.
 - 일본어·중국어·영어 자료는 한국어 번역본으로 쓰고, 번역했다는 사실을 맨 위 정보(translation, translationScope, reviewedBy)에 적는다.

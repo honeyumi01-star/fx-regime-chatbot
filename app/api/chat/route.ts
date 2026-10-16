@@ -7,7 +7,7 @@ import { AskAiError, TIMEOUT_MS, askAi } from "@/lib/ask-ai";
 import { loadDocuments } from "@/lib/documents";
 import { clientIp, createRateLimiter, isSameOrigin } from "@/lib/guard";
 import { getSuggestions, findChunks } from "@/lib/search";
-import { checkAnswer, emptyCountry } from "@/lib/sources";
+import { checkAnswer, emptyCountries } from "@/lib/sources";
 
 // 질문은 문자열이고, 앞뒤 공백을 뺀 길이가 1~300자여야 한다 (DESIGN §5, §8)
 const requestSchema = z.object({
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     if (chunks.length === 0) {
       return Response.json({
         status: "no_source",
-        countries: { KR: emptyCountry(), JP: emptyCountry(), CN: emptyCountry() },
+        countries: emptyCountries(),
         sources: [],
         suggestions,
       });

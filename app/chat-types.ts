@@ -12,7 +12,8 @@ export type Source = {
 };
 export type ApiAnswer = {
   status: "ok" | "no_source" | "out_of_scope";
-  countries: { KR: CountryAnswer; JP: CountryAnswer; CN: CountryAnswer };
+  // (보관함의 예전 보고서에는 US 칸이 없지만, 보고서 화면은 이 칸을 읽지 않는다)
+  countries: { KR: CountryAnswer; JP: CountryAnswer; CN: CountryAnswer; US: CountryAnswer };
   sources: Source[];
   suggestions: string[];
 };
@@ -33,6 +34,7 @@ export const COUNTRY_COLUMNS = [
   ["KR", "한국"],
   ["JP", "일본"],
   ["CN", "중국"],
+  ["US", "미국"],
 ] as const;
 
 export const ROWS = [
@@ -50,7 +52,7 @@ export type ReportData = {
     sections: {
       heading: "제도 개요" | "주요 규제" | "최근 변경";
       paragraphs: {
-        country: "KR" | "JP" | "CN";
+        country: "KR" | "JP" | "CN" | "US";
         text: string;
         sourceNumbers: number[];
         points: SourcedText[];

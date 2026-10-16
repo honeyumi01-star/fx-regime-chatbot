@@ -5,10 +5,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Chunk } from "./ask-ai";
+import { COUNTRY_CODES, type CountryCode } from "./countries";
 
 export type DocMeta = {
   id: string;
-  country: "KR" | "JP" | "CN";
+  country: CountryCode;
   title: string;
   institution: string;
   asOf: string;
@@ -77,8 +78,8 @@ export function parseDocument(raw: string) {
     if (colon > 0) fields[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
   }
 
-  const country = fields.country;
-  if (!fields.id || (country !== "KR" && country !== "JP" && country !== "CN")) return null;
+  const country = COUNTRY_CODES.find((code) => code === fields.country);
+  if (!fields.id || !country) return null;
 
   const meta: DocMeta = {
     id: fields.id,

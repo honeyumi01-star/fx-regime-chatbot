@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   // 브라우저 탭에 보이는 앱 이름과 설명
-  title: "한중일 외환제도 분석 챗봇",
-  description: "한국·일본·중국의 외환제도를 키워드로 검색하고 비교해 주는 챗봇",
+  title: "주요 국가 외환제도 분석 챗봇",
+  description: "한국·일본·중국·미국의 외환제도를 키워드로 검색하고 비교해 주는 챗봇",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
